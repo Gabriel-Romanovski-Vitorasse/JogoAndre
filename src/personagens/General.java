@@ -16,6 +16,6 @@ public class General extends Personagem {
 
     @Override
     public String desenhar() {
-        return "[General] " + nome + " | HP: " + vida + " | Arma: " + arma.getNome();
+        return descricao("General");
     }
 }

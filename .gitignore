@@ -1,0 +1,6 @@
+# Saida de compilacao
+/build/
+/dist/
+
+# Configuracoes locais do NetBeans
+/nbproject/private/

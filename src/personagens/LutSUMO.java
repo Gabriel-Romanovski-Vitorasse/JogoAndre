@@ -16,6 +16,6 @@ public class LutSUMO extends Personagem {
 
     @Override
     public String desenhar() {
-        return "[Lutador de Sumo] " + nome + " | HP: " + vida + " | Arma: " + arma.getNome();
+        return descricao("Lutador de Sumo");
     }
 }

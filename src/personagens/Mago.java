@@ -16,6 +16,6 @@ public class Mago extends Personagem {
 
     @Override
     public String desenhar() {
-        return "[Mago] " + nome + " | HP: " + vida + " | Arma: " + arma.getNome();
+        return descricao("Mago");
     }
 }
