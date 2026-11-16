@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import personagens.Personagem;
 import util.InOut;
+import util.OperacaoCanceladaException;
 
 public class TelaJogo extends JFrame {
 
@@ -27,16 +28,13 @@ public class TelaJogo extends JFrame {
         this.personagens = personagens;
         this.iconeJogo = iconeJogo;
 
-        
-        URL urlFundo = getClass().getResource("imagens/fundo.jpg");
+        URL urlFundo = getClass().getResource("/imagens/fundo.jpg");
         if (urlFundo != null) {
             this.imagemFundo = new ImageIcon(urlFundo).getImage();
         }
-        /*String caminhoDaCaverna = "/src/imagens/fundo.jpg";
-        ImageIcon fundo = new ImageIcon(caminhoDaCaverna);
-        JLabel painel = new JLabel(fundo, JLabel.CENTER);
-        painel.setHorizontalTextPosition(JLabel.CENTER);
-        painel.setVerticalTextPosition(JLabel.CENTER);*/
+        if (iconeJogo != null) {
+            setIconImage(iconeJogo.getImage());
+        }
 
         configurarJanela();
     }
@@ -53,20 +51,20 @@ public class TelaJogo extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 if (imagemFundo != null) {
-                    
                     g.drawImage(imagemFundo, 0, 0, getWidth(), getHeight(), this);
-                } else {
-                    
-                    setBackground(new Color(30, 30, 40));
                 }
             }
         };
+        painelFundo.setBackground(new Color(30, 30, 40));
         painelFundo.setLayout(new BorderLayout());
 
         
         JLabel titulo = new JLabel("ARENA DE COMBATE", SwingConstants.CENTER);
         titulo.setFont(new Font("Serif", Font.BOLD, 32));
         titulo.setForeground(Color.WHITE);
+        // Faixa escura atras do titulo para ele continuar legivel sobre qualquer imagem de fundo.
+        titulo.setOpaque(true);
+        titulo.setBackground(new Color(40, 44, 52));
         painelFundo.add(titulo, BorderLayout.NORTH);
 
         
@@ -76,42 +74,38 @@ public class TelaJogo extends JFrame {
         JButton btnStatus = criarBotao("1. Status e Comportamentos");
         JButton btnArmas = criarBotao("2. Trocar Arma");
         JButton btnBatalha = criarBotao("3. Iniciar Batalha (D20)");
+        JButton btnRestaurar = criarBotao("4. Restaurar Vidas");
         JButton btnSair = criarBotao("Sair");
 
-        
-        btnStatus.addActionListener(e -> {
-            try {
-                JogoDesenvolvido.testarPersonagens(personagens, iconeJogo);
-            } catch (Exception ex) {
-                InOut.msgDeErro("Erro", ex.getMessage());
-            }
-        });
-
-        btnArmas.addActionListener(e -> {
-            try {
-                JogoDesenvolvido.trocarArma(personagens, iconeJogo);
-            } catch (Exception ex) {
-                InOut.msgDeErro("Erro de Validação", ex.getMessage());
-            }
-        });
-
-        btnBatalha.addActionListener(e -> {
-            try {
-                JogoDesenvolvido.simularBatalha(personagens, iconeJogo);
-            } catch (Exception ex) {
-                InOut.msgDeErro("Erro na Batalha", ex.getMessage());
-            }
-        });
-
+        btnStatus.addActionListener(e -> executar("Erro",
+                () -> JogoDesenvolvido.testarPersonagens(personagens, iconeJogo)));
+        btnArmas.addActionListener(e -> executar("Erro de Validação",
+                () -> JogoDesenvolvido.trocarArma(personagens, iconeJogo)));
+        btnBatalha.addActionListener(e -> executar("Erro na Batalha",
+                () -> JogoDesenvolvido.simularBatalha(personagens, iconeJogo)));
+        btnRestaurar.addActionListener(e -> executar("Erro",
+                () -> JogoDesenvolvido.restaurarVidas(personagens, iconeJogo)));
         btnSair.addActionListener(e -> System.exit(0));
 
         painelBotoes.add(btnStatus);
         painelBotoes.add(btnArmas);
         painelBotoes.add(btnBatalha);
+        painelBotoes.add(btnRestaurar);
         painelBotoes.add(btnSair);
 
         painelFundo.add(painelBotoes, BorderLayout.SOUTH);
         add(painelFundo);
+    }
+
+    // Executa a acao de um botao: cancelar um dialogo apenas volta ao menu; outros erros sao exibidos.
+    private void executar(String tituloErro, Runnable acao) {
+        try {
+            acao.run();
+        } catch (OperacaoCanceladaException ex) {
+            // Usuario cancelou: nada a fazer.
+        } catch (Exception ex) {
+            InOut.msgDeErro(tituloErro, ex.getMessage());
+        }
     }
 
     private JButton criarBotao(String texto) {

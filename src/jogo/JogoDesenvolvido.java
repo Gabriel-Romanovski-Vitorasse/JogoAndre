@@ -1,9 +1,9 @@
 package jogo;
 
-import armas.*;
+import armas.Arma_IF;
+import armas.Arsenal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 import personagens.*;
@@ -41,111 +41,51 @@ public class JogoDesenvolvido {
     }
 
     public static void trocarArma(List<Personagem> lista, ImageIcon icone) {
-        StringBuilder sb = new StringBuilder("Escolha o número do personagem:\n");
-        for (int i = 0; i < lista.size(); i++) {
-            sb.append(i).append(" - ").append(lista.get(i).desenhar()).append("\n");
+        Personagem escolhido = lerPersonagem(lista, "Escolha o número do personagem:", icone);
+
+        List<Arma_IF> armas = Arsenal.todas();
+        StringBuilder menuArmas = new StringBuilder("Escolha a nova arma para " + escolhido.getNome() + ":\n");
+        for (int i = 0; i < armas.size(); i++) {
+            menuArmas.append(i + 1).append(" - ").append(armas.get(i).getNome())
+                     .append(" (Dano ").append(armas.get(i).getDano()).append(")\n");
         }
 
-        int idx = InOut.leInt(sb.toString(), icone);
-        if (idx < 0 || idx >= lista.size()) {
-            throw new IndexOutOfBoundsException("Índice de personagem inválido!");
+        int opArma = InOut.leInt(menuArmas.toString(), icone);
+        if (opArma < 1 || opArma > armas.size()) {
+            throw new IllegalArgumentException("Opção de arma inválida!");
         }
 
-        Personagem escolhido = lista.get(idx);
-
-        String menuArmas = "Escolha a nova arma para " + escolhido.getNome() + ":\n"
-                + "1 - Revólver (Dano 25)\n"
-                + "2 - Fuzil (Dano 45)\n"
-                + "3 - Faca (Dano 15)\n"
-                + "4 - Magia (Dano 40)\n"
-                + "5 - Sopro de Fogo (Dano 55)\n"
-                + "6 - Desarmado (Dano 5)";
-
-        int opArma = InOut.leInt(menuArmas, icone);
-        Arma_IF novaArma;
-
-        switch (opArma) {
-            case 1: novaArma = new Revolver(); break;
-            case 2: novaArma = new Fuzil(); break;
-            case 3: novaArma = new Faca(); break;
-            case 4: novaArma = new Magia(); break;
-            case 5: novaArma = new SoproDeFogo(); break;
-            case 6: novaArma = new Desarmado(); break;
-            default:
-                throw new IllegalArgumentException("Opção de arma inválida!");
-        }
-
+        Arma_IF novaArma = armas.get(opArma - 1);
         escolhido.setArma(novaArma);
         InOut.msgDeInformacao("Arma Equipada", escolhido.getNome() + " agora está equipado com: " + novaArma.getNome(), icone);
     }
 
     public static void simularBatalha(List<Personagem> lista, ImageIcon icone) {
-        StringBuilder sb = new StringBuilder("Selecione os combatentes pelo número:\n");
+        Personagem p1 = lerPersonagem(lista, "Digite o número do Desafiante 1:", icone);
+        Personagem p2 = lerPersonagem(lista, "Digite o número do Desafiante 2:", icone);
+
+        String logBatalha = new Batalha().simular(p1, p2);
+        InOut.msgDeInformacao("Resultado da Batalha", logBatalha, icone);
+    }
+
+    public static void restaurarVidas(List<Personagem> lista, ImageIcon icone) {
+        for (Personagem p : lista) {
+            p.restaurarVida();
+        }
+        InOut.msgDeInformacao("Vidas Restauradas", "Todos os personagens voltaram com a vida cheia!", icone);
+    }
+
+    private static Personagem lerPersonagem(List<Personagem> lista, String pergunta, ImageIcon icone) {
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < lista.size(); i++) {
             sb.append(i).append(" - ").append(lista.get(i).desenhar()).append("\n");
         }
+        sb.append("\n").append(pergunta);
 
-        int idx1 = InOut.leInt(sb.toString() + "\nDigite o número do Desafiante 1:", icone);
-        int idx2 = InOut.leInt(sb.toString() + "\nDigite o número do Desafiante 2:", icone);
-
-        if (idx1 < 0 || idx1 >= lista.size() || idx2 < 0 || idx2 >= lista.size()) {
-            throw new IndexOutOfBoundsException("Um dos personagens selecionados não existe!");
+        int idx = InOut.leInt(sb.toString(), icone);
+        if (idx < 0 || idx >= lista.size()) {
+            throw new IndexOutOfBoundsException("Índice de personagem inválido!");
         }
-        if (idx1 == idx2) {
-            throw new IllegalArgumentException("Um personagem não pode batalhar contra si mesmo!");
-        }
-
-        Personagem p1 = lista.get(idx1);
-        Personagem p2 = lista.get(idx2);
-
-        if (!p1.estaVivo() || !p2.estaVivo()) {
-            throw new IllegalStateException("Ambos os personagens precisam estar vivos (HP > 0) para lutar!");
-        }
-
-        Random dado = new Random();
-        StringBuilder logBatalha = new StringBuilder("=== INÍCIO DO COMBATE ===\n")
-                .append(p1.getNome()).append(" (HP: ").append(p1.getVida()).append(") VS ")
-                .append(p2.getNome()).append(" (HP: ").append(p2.getVida()).append(")\n\n");
-
-        int turno = 1;
-        while (p1.estaVivo() && p2.estaVivo()) {
-            logBatalha.append("--- Turno ").append(turno).append(" ---\n");
-
-            int rolagem1 = dado.nextInt(20) + 1;
-            if (rolagem1 >= 8) {
-                int dano = p1.getArma().getDano();
-                if (rolagem1 == 20) dano = (int) (dano * 1.5);
-                p2.receberDano(dano);
-                logBatalha.append("[D20: ").append(rolagem1).append("] ").append(p1.arma())
-                          .append(" -> Causou ").append(dano).append(" de dano! (HP ").append(p2.getNome()).append(": ").append(p2.getVida()).append(")\n");
-            } else {
-                logBatalha.append("[D20: ").append(rolagem1).append("] ").append(p1.getNome()).append(" errou o ataque!\n");
-            }
-
-            if (!p2.estaVivo()) break;
-
-            if (p2.getVida() < 25 && dado.nextBoolean()) {
-                logBatalha.append(p2.getNome()).append(" está com vida baixa e tentou fugir:\n   ")
-                          .append(p2.correr()).append("\n   ").append(p2.voar()).append("\n");
-            }
-
-            int rolagem2 = dado.nextInt(20) + 1;
-            if (rolagem2 >= 8) {
-                int dano = p2.getArma().getDano();
-                if (rolagem2 == 20) dano = (int) (dano * 1.5);
-                p1.receberDano(dano);
-                logBatalha.append("[D20: ").append(rolagem2).append("] ").append(p2.arma())
-                          .append(" -> Causou ").append(dano).append(" de dano! (HP ").append(p1.getNome()).append(": ").append(p1.getVida()).append(")\n");
-            } else {
-                logBatalha.append("[D20: ").append(rolagem2).append("] ").append(p2.getNome()).append(" errou o ataque!\n");
-            }
-
-            turno++;
-        }
-
-        Personagem vencedor = p1.estaVivo() ? p1 : p2;
-        logBatalha.append("\n=== VENCEDOR: ").append(vencedor.getNome().toUpperCase()).append(" ===");
-
-        InOut.msgDeInformacao("Resultado da Batalha", logBatalha.toString(), icone);
+        return lista.get(idx);
     }
 }

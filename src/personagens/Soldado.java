@@ -16,6 +16,6 @@ public class Soldado extends Personagem {
 
     @Override
     public String desenhar() {
-        return "[Soldado] " + nome + " | HP: " + vida + " | Arma: " + arma.getNome();
+        return descricao("Soldado");
     }
 }

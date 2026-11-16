@@ -16,6 +16,6 @@ public class DragaoAlado extends Personagem {
 
     @Override
     public String desenhar() {
-        return "[Dragão Alado] " + nome + " | HP: " + vida + " | Arma: " + arma.getNome();
+        return descricao("Dragão Alado");
     }
 }
